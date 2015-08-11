@@ -1,0 +1,63 @@
+.TH SQUISH 1 local
+.SH NAME
+squish \- join successive lines based on their initial key
+.SH SYNOPSIS
+.ll +8
+.B squish
+.RB [ \-h ]
+.RB [ \-d\ delimiter]
+.RB [ \-s\ separator]
+.RB [ \-o\ output]
+[
+.I "file"
+]
+.ll -8
+.br
+.SH DESCRIPTION
+.I Squish
+Join lines of a file together based on their initial key 
+.br
+squish takes input that looks like:
+
+.br 
+foo1 bar1 bar2
+.br
+foo1 bar3
+.br
+foo2 bar4
+.br
+foo3 bar5
+.br
+foo3 bar6
+.br
+
+and outputs:
+
+.br .br
+foo1 bar1 bar2 bar3
+.br
+foo2 bar4
+.br
+foo3 bar5 bar6
+.br
+
+joining together lines based on the first key.
+.br
+
+Conceptually the behaviour is that each line has a "key", which is the text up to the first instance of the 'delimiter' option, including the preceding newline if present. A key will be printed if and only if it is different from the preceding key.
+.br
+
+.SH OPTIONS
+.TP
+.B \-h --help
+Print help message and exit normally 
+.TP
+.B \-o --output
+The file to print output to. If this is absence or - then squish will print to standard out.
+.TP
+.B \-d --delimiter 
+The single character to use to mark the boundary of the initial key. Defaults to ' '
+.TP
+.B \-t --terminator
+The single character to use to mark boundaries of the records. Defaults to '\\n'
+.TP

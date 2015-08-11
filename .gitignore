@@ -1,0 +1,7 @@
+*.swp
+*.swo
+build/*
+bin/
+testingvenv
+.hypothesis
+__pycache__
