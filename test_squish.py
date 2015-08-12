@@ -21,12 +21,12 @@ import hypothesis.strategies as st
 import pytest
 
 
-def squish(data, delimiter=None, separator=None):
+def squish(data, delimiter=None, terminator=None):
     command = ['./bin/squish']
     if delimiter is not None:
         command.extend(['-d', delimiter])
-    if separator is not None:
-        command.extend(['-s', separator])
+    if terminator is not None:
+        command.extend(['-t', terminator])
     process = subprocess.Popen(
         command, stdin=subprocess.PIPE, stdout=subprocess.PIPE
     )
@@ -39,24 +39,39 @@ def squish(data, delimiter=None, separator=None):
     return result
 
 
-def naivesquish(data, delimiter=None, separator=None):
+def naivesquish(data, delimiter=None, terminator=None):
     if delimiter is None:
-        delimiter = ' '
-    if separator is None:
-        separator = delimiter
+        delimiter = b' '
+    if terminator is None:
+        terminator = b'\n'
     if not data:
         return b''
-    lines = data.split(b'\n')
-    records = []
-    for line in lines:
-        bits = line.split(delimiter)
-        if len(bits) == 1:
-            bits.append(b'')
-        records.append(bits)
 
+    def key_for(line):
+        return line.split(delimiter, 1)[0]
+
+    lines = data.split(terminator)
+    results = [lines[0]]
+    current_key = key_for(lines[0])
+    for line in lines[1:]:
+        line_key = key_for(line)
+        if line_key == current_key:
+            results[-1] += line[len(current_key):]
+        else:
+            results.append(line)
+            current_key = line_key
+    return terminator.join(results)
 
 text_bytes = st.text().map(lambda s: s.encode('utf-8'))
 text_bytes_lines = st.lists(text_bytes).map(lambda s: b'\n'.join(s))
+
+charoption = st.integers(
+    min_value=1, max_value=255).map(lambda i: bytes([i])) | st.none()
+
+
+@given(text_bytes_lines, charoption, charoption)
+def test_squish_is_equal_to_reference_implementation(xs, s, d):
+    assert squish(xs, s, d) == naivesquish(xs, s, d)
 
 
 @given(text_bytes_lines)
@@ -101,4 +116,5 @@ def test_does_not_contain_any_duplicate_lines(xs):
     ]
 )
 def test_standard_examples(input, expected):
+    assert naivesquish(input) == expected
     assert squish(input) == expected
